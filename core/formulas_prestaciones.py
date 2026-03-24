@@ -5,17 +5,41 @@ def calcular_auxilio_transporte(salario_base):
     aux_trans_2026 = 249095
     return aux_trans_2026 if salario_base <= (smmlv_2026 * 2) else 0
 
-def calcular_provisiones_mensuales(base_salarial, aux_trans, es_integral):
+def calcular_provisiones_mensuales(base_salarial, aux_trans, es_integral, dias_trabajados=30):
+    """
+    Calcula provisiones usando la fórmula legal colombiana:
+    (Base * Días) / 360
+    """
     if es_integral:
-        # En integral, prima y cesantías están en el 30% prestacional. Solo se provisiona vacaciones.
-        return {"prima": 0, "cesantias": 0, "int_cesantias": 0, "vacaciones": base_salarial * 0.0417}
+        # Solo se provisiona vacaciones (Base * Días) / 720
+        return {
+            "prima": 0, 
+            "cesantias": 0, 
+            "intereses_cesantias": 0, 
+            "vacaciones": round((base_salarial * dias_trabajados) / 720)
+        }
     
     base_con_aux = base_salarial + aux_trans
+    
+    # 1. Prima de Servicios: (Base * Días) / 360
+    prima = (base_con_aux * dias_trabajados) / 360
+    
+    # 2. Cesantías: (Base * Días) / 360
+    cesantias = (base_con_aux * dias_trabajados) / 360
+    
+    # 3. Intereses sobre Cesantías: (Cesantías * Días * 0.12) / 360
+    # Nota: El 0.12 es la tasa anual proporcional al tiempo laborado
+    intereses = (cesantias * dias_trabajados * 0.12) / 360
+    
+    # 4. Vacaciones: (Base Salarial * Días) / 720
+    # Se usa 720 porque son 15 días por año (360 / 15 = 24 meses -> 24 * 30 = 720)
+    vacaciones = (base_salarial * dias_trabajados) / 720
+
     return {
-        "prima": base_con_aux * 0.0833,
-        "cesantias": base_con_aux * 0.0833,
-        "int_cesantias": (base_con_aux * 0.0833) * 0.12,
-        "vacaciones": base_salarial * 0.0417
+        "prima": round(prima),
+        "cesantias": round(cesantias),
+        "intereses_cesantias": round(intereses),
+        "vacaciones": round(vacaciones)
     }
 
 def calcular_parafiscales_y_ss(base_salarial, es_integral, exonerado_114_1=True):
@@ -69,4 +93,4 @@ def calcular_parafiscales_y_ss(base_salarial, es_integral, exonerado, clase_arl=
         "icbf": icbf_val
     }
     
-    return resultados # <--- Sin esta línea, el programa fallará con 'NoneType'
+    return resultados 

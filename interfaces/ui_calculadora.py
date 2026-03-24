@@ -87,7 +87,7 @@ def mostrar_calculadora():
         sueldo_proporcional = round((sueldo_pactado / 30) * (dias_lab - dias_aus), 0)
         st.info(f"Liquidando sobre **{dias_lab - dias_aus}** días efectivos.")
 
-        with st.expander("🕒 Horas Extras y Recargos (Cantidades)"):
+        with st.expander("🕒 Horas Extras y Recargos (cantidad en horas)"):
             # Detectamos el escenario para mostrar la etiqueta correcta al usuario
             es_post_reforma = fecha_nomina >= date(2026, 7, 1)
     
@@ -98,34 +98,81 @@ def mostrar_calculadora():
             f_rndf  = "1.25" if es_post_reforma else "1.15"
 
             dict_extras = {
-                "hed": st.number_input("Extra Diurno (1.25)", 0),
-                "hen": st.number_input("Extra Nocturno (1.75)", 0),
-                "heddf": st.number_input(f"Extra Diurno D/F ({f_heddf})", 0),
-                "hendf": st.number_input(f"Extra Nocturno D/F ({f_hendf})", 0),
-                "rn": st.number_input("Recargo Nocturno (0.35)", 0),
-                "rdf": st.number_input(f"Recargo D/F ({f_rdf})", 0),
-                "rndf": st.number_input(f"Recargo Noct D/F ({f_rndf})", 0)
+                "hed": st.number_input("Horas extras diurnas (1.25)", 0),
+                "hen": st.number_input("Horas extras nocturnas (1.75)", 0),
+                "heddf": st.number_input(f"Horas extras diurnas domingos y/o festivos ({f_heddf})", 0),
+                "hendf": st.number_input(f"Horas extras nocturnas domingos y/o festivos ({f_hendf})", 0),
+                "rn": st.number_input("Horas recargo nocturno 0.35", 0),
+                "rdf": st.number_input(f"Horas recargo domingos y/o festivos ({f_rdf})", 0),
+                "rndf": st.number_input(f"Horas recargo nocturno domingos y/o festivos ({f_rndf})", 0)
     }
+            # Calculamos inmediatamente para que 'total_ext' esté disponible para las deducciones
+            detalle_ext, total_ext, div_usado = calcular_extras(sueldo_pactado, dict_extras, fecha_nomina)
+
         comisiones = st.number_input("Comisiones", 0.0)
         bono_pres = st.number_input("Bonos Prestacionales", 0.0)
         bono_no_pres = st.number_input("Bonos NO Prestacionales", 0.0)
 
     with c2:
         st.subheader("📉 Depuración Tributaria Completa")
-        with st.expander("➕ Ingresos no constitutivos"):
-            vol_obl = st.number_input("Aportes voluntarios pensión (RAIS)", 0.0)
+        with st.expander("➕ Ingresos no constitutivos de renta ni ganancia ocasional (Art. 206 ET)"):
+            vol_obl = st.number_input("Aportes voluntarios a fondos de pensiones obligatorios (Régimen ahorro individual) (Art. 55 ET)", 0.0)
             
         with st.expander("➖ Deducciones (Art. 387 ET)", expanded=True):
-            viv = st.number_input("Intereses vivienda", 0.0)
-            med = st.number_input("Salud prepagada", 0.0)
-            dep = st.checkbox('¿Tiene derecho a dependientes?')
-            if dep and (sueldo_proporcional * 0.1) > (32 * uvt_2026):
-                st.caption(f"⚠️ Tope 32 UVT aplicado: ${32*uvt_2026:,.0f}")
+            
+            # 1. INTERESES DE VIVIENDA
+            viv = st.number_input("Intereses por préstamos de vivienda (Art. 119 y 387 ET)", 0.0)
+            tope_viv_mes = 100 * uvt_2026
+            if viv > tope_viv_mes:
+                st.warning(f"⚠️ Exceso de deducciones el tope mensual es 100 UVT (${tope_viv_mes:,.0f}). El excedente no será deducible.")
+                viv_aplicable = tope_viv_mes
+            else:
+                viv_aplicable = viv
 
-        with st.expander("🛡️ Rentas exentas (Art. 206 / 126 ET)"):
-            fvp = st.number_input("Aportes FVP", 0.0)
-            afc = st.number_input("Aportes AFC", 0.0)
-            otras_ex = st.number_input("Otras rentas exentas", 0.0)
+            # 2. MEDICINA PREPAGADA
+            med = st.number_input("Salud prepagada / Seguros de salud (Art. 387 ET)", 0.0)
+            tope_med_mes = 16 * uvt_2026
+            if med > tope_med_mes:
+                st.warning(f"⚠️ Exceso de deducciones el tope mensual es 16 UVT (${tope_med_mes:,.0f}). El excedente no será deducible.")
+                med_aplicable = tope_med_mes
+            else:
+                med_aplicable = med
+            # 3. DEPENDIENTES
+            dep = st.checkbox('¿Tiene derecho a dependientes?')
+            if dep:
+                # 1. Calculamos el 10% del ingreso bruto del mes
+                ingreso_bruto = sueldo_proporcional + total_ext + comisiones + bono_pres
+                valor_dep_teorico = ingreso_bruto * 0.1
+                
+                # 2. Definimos el tope legal (32 UVT)
+                tope_32_uvt = 32 * uvt_2026
+                
+                # 3. Aplicamos la deducción (el menor entre ambos)
+                deduccion_aplicable = min(valor_dep_teorico, tope_32_uvt)
+                
+                # 4. Mostramos el cálculo en tiempo real
+                st.success(f"✅ Deducción por dependientes: ${deduccion_aplicable:,.0f}")
+                
+                if valor_dep_teorico > tope_32_uvt:
+                    st.warning(f"⚠️ Se aplicó el tope legal de 32 UVT (${tope_32_uvt:,.0f}). EL excedente no será deducible.")
+
+        with st.expander("🛡️ Rentas exentas (Art. 126 / 206 ET)"):
+            # Aportes voluntarios (Art. 126-1 y 126-4)
+            fvp = st.number_input("Aportes a Fondos de Pensiones Voluntarias (Art. 126-1 ET)", 0.0)
+            afc = st.number_input("Aportes a cuentas AFC / AVC (Art. 126-4 ET)", 0.0)
+            
+            st.markdown("---")
+            st.caption("Numerales del Art. 206 ET")
+            
+            # Indemnizaciones y Gastos (Numerales 1, 2 y 3)
+            ind_accidente = st.number_input("Indemnizaciones por accidente o enfermedad (Num. 1)", 0.0)
+            ind_maternidad = st.number_input("Indemnizaciones protección a la maternidad (Num. 2)", 0.0)
+            gastos_entierro = st.number_input("Gastos de entierro del trabajador (Num. 3)", 0.0)
+            
+            # Otros
+            otras_ex = st.number_input("Otras rentas exentas (Art. 206 ET)", 0.0)
+            
+            # Mantenemos el cálculo de extras que ya tenías aquí
             detalle_ext, total_ext, div_usado = calcular_extras(sueldo_pactado, dict_extras, fecha_nomina)
         
         # --- NUEVA SECCIÓN INDEPENDIENTE ---
@@ -189,14 +236,12 @@ def mostrar_calculadora():
 
         # --- 2. CONSTRUCCIÓN DE DATAFRAMES ---
         df_em = pd.DataFrame([
-            ("Devengos", None),
             ("Sueldo Proporcional.", sueldo_proporcional),
             ("Horas extras y recargos", total_ext),
             ("Auxilio de Transporte", aux_t_prop),
             ("Comisiones (Salarial)", comisiones),
             ("Bonificaciones Prestacionales", bono_pres),
             ("Pagos NO Prestacionales (Ley 1393)", bono_no_pres),
-            ("Deducciones", None),
             ("Aporte Salud (4%)", -salud_e),
             ("Aporte Pensión (4%)", -pension_e),
             (f"Aporte FSP ({tasa_fsp_decimal*100:.1f}%)", -fsp),
@@ -210,16 +255,13 @@ def mostrar_calculadora():
         subtotal_paraf = para['caja_compensacion'] + para.get('sena', 0) + para.get('icbf', 0)
 
         df_pa = pd.DataFrame([
-            ("Seguridad Social y ARL", None),
             ("Salud Patronal (8.5%)", para.get('salud_patronal', 0)),
             ("Pensión Patronal (12%)", para['pension_patronal']),
-            (f"ARL ({nivel_arl})", para.get('arl_1', 0)),
-            ("Provisión Pretacional", None), 
+            (f"ARL {nivel_arl}", para.get('arl_1', 0)),
             ("Cesantías (8.33%)", prov.get('cesantias', 0)),
             ("Intereses sobre Cesantías (1%)", prov.get('intereses_cesantias', 0)),
             ("Prima de Servicios (8.33%)", prov.get('prima', 0)),
             ("Vacaciones (4.17%)", prov.get('vacaciones', 0)),
-            ("Parafiscales", None),
             ("Caja de Compensación (4%)", para['caja_compensacion']),
             ("SENA (2%)", para.get('sena', 0)),
             ("ICBF (3%)", para.get('icbf', 0)),
@@ -246,11 +288,25 @@ def mostrar_calculadora():
         # TABLAS VISUALES
         col_res1, col_res2 = st.columns(2)
         with col_res1:
-            st.write("**Desprendible Empleado**")
-            st.table(df_em.style.format({"Valor": formato_contable}))
+            st.markdown("### 📄 Desprendible Empleado")
+            df_em_filtrado = df_em[(df_em["Valor"] != 0) | (df_em["Valor"].isna())]
+            
+            # USAMOS st.dataframe con hide_index=True para eliminar el 0, 1, 2...
+            st.dataframe(
+                df_em_filtrado.style.format({"Valor": formato_contable}),
+                hide_index=True, 
+                use_container_width=True
+            )
             st.subheader(f"NETO: ${neto_final:,.0f}")
             
         with col_res2:
-            st.write("**Costo Empresa**")
-            st.table(df_pa.style.format({"Valor": formato_contable}))
+            st.markdown("### 🏢 Costo Empresa")
+            df_pa_filtrado = df_pa[(df_pa["Valor"] != 0) | (df_pa["Valor"].isna())]
+            
+            # Aplicamos la misma lógica para el reporte de empresa
+            st.dataframe(
+                df_pa_filtrado.style.format({"Valor": formato_contable}),
+                hide_index=True,
+                use_container_width=True
+            )
             st.subheader(f"TOTAL: ${costo_total_mes:,.0f}")
