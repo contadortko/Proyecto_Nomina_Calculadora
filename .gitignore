@@ -1,23 +1,37 @@
-# Entorno Virtual (No queremos subir las 2000 librerías de Python)
-env/
-venv/
-ENV/
-
-# Archivos Temporales de Python
-__pycache__/
-*.py[cod]
-*$py.class
-
-# Archivos de Datos y Excel (Para no subir bases de datos reales por accidente)
+# --- SEGURIDAD DE LA INFORMACIÓN (Protección de Datos Reales) ---
+# Ignora cualquier reporte generado para evitar subir datos de empleados por error
 *.xlsx
 *.xls
 *.csv
-!auditoria.xlsx  # Ejemplo: Si quieres permitir uno específico, usa el signo !
-
-# Archivos de Reportes PDF
 *.pdf
+# Si necesitas subir una plantilla de ejemplo, renómbrala como 'ejemplo_auditoria.xlsx' 
+# y quítale el '#' a la siguiente línea:
+# !ejemplo_auditoria.xlsx
 
-# Configuración de Editores
+# --- ENTORNOS VIRTUALES (Carga Técnica) ---
+# No queremos subir las librerías de Python instaladas
+env/
+venv/
+ENV/
+.env/
+bin/
+lib/
+share/
+
+# --- CACHÉ Y ARCHIVOS TEMPORALES DE PYTHON ---
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ipynb_checkpoints/
+
+# --- CONFIGURACIÓN DE EDITORES Y SISTEMA ---
 .vscode/
 .idea/
 .DS_Store
+Thumbs.db
+*.swp
+
+# --- CONFIGURACIÓN DE STREAMLIT ---
+# Ignoramos la carpeta de configuración local (puede contener secretos)
+.streamlit/
