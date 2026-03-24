@@ -1,0 +1,28 @@
+echo '{
+    "configuracion_global": {
+        "nombre_sistema": "Nomina Intelligence Hub",
+        "version": "2026.1",
+        "moneda": "COP"
+    },
+    "parametros_2026": {
+        "smmlv": 1705905,
+        "aux_transporte": 249095,
+        "uvt_valor": 52374,
+        "salario_integral_minimo": 22176765,
+        "divisor_enero_junio": 220,
+        "divisor_julio_diciembre": 210
+    },
+    "tabla_recargos": {
+        "extra_diurno": 0.25,
+        "nocturno": 0.35,
+        "extra_nocturno": 0.80,
+        "dominical_festivo_sem1": 0.80,
+        "dominical_festivo_sem2": 0.90,
+        "extra_diurno_dom_fes_sem1": 1.05,
+        "extra_diurno_dom_fes_sem2": 1.15,
+        "nocturno_dom_fes_sem1": 1.15,
+        "nocturno_dom_fes_sem2": 1.25,
+        "extra_nocturno_dom_fes_sem1": 1.55,
+        "extra_nocturno_dom_fes_sem2": 1.65
+    }
+}' > config.json
