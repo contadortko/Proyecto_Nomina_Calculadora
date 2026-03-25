@@ -3,9 +3,15 @@ import streamlit as st
 import pandas as pd
 import io
 from fpdf import FPDF
-from core.formulas_retencion import depurar_base_laboral, calcular_retencion_final
-from core.formulas_prestaciones import calcular_auxilio_transporte, calcular_provisiones_mensuales, calcular_parafiscales_y_ss
-from core.formulas_nomina import calcular_extras, calcular_deducciones_ley, obtener_tarifa_fsp
+
+# RUTAS ACTUALIZADAS PARA LA ARQUITECTURA DE CAPAS
+from src.core.formulas_retencion import depurar_base_laboral, calcular_retencion_final
+from src.core.formulas_prestaciones import (
+    calcular_auxilio_transporte, 
+    calcular_provisiones_mensuales, 
+    calcular_parafiscales_y_ss
+)
+from src.core.formulas_nomina import calcular_extras, calcular_deducciones_ley, obtener_tarifa_fsp
 
 def generar_pdf_robusto(df_empleado, df_empresa, neto, costo_total, uvt_base):
     pdf = FPDF()
@@ -15,6 +21,7 @@ def generar_pdf_robusto(df_empleado, df_empresa, neto, costo_total, uvt_base):
     
     pdf.set_font("Arial", "B", 12)
     pdf.ln(5)
+    
     pdf.cell(190, 10, f"1. RESUMEN EMPLEADO (Base Gravable: {uvt_base} UVT)", 0, 1, "L")
     pdf.set_font("Arial", "", 10)
     for index, row in df_empleado.iterrows():
