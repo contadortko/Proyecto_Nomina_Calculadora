@@ -1,6 +1,8 @@
 import streamlit as st
 from datetime import date
 from src.ui.calculadora import mostrar_calculadora
+from src.ui.consulta_legal import renderizar_modulo_legal 
+from src.core.base_legal import obtener_constantes_nomina, obtener_divisor_operativo
 
 # 1. CONFIGURACIÓN RESPONSIVA
 st.set_page_config(
@@ -12,11 +14,17 @@ st.set_page_config(
 def main():
     # --- LÓGICA DE AUTOMATIZACIÓN POR FECHA (LEY 2101) ---
     fecha_hoy = date.today()
-    # La reducción a 42h ocurre el 1 de julio de 2026
-    es_post_julio = fecha_hoy >= date(2026, 7, 1)
+    parametros_actuales = obtener_constantes_nomina(fecha_hoy)
     
-    divisor = 210 if es_post_julio else 220
-    jornada_nombre = "42 Horas (Ley 2101)" if es_post_julio else "44 Horas"
+    # IMPORTANTE: Usamos la función oficial para no tener fechas regadas por todo el código
+    divisor = obtener_divisor_operativo(fecha_hoy)
+    
+    # La jornada depende directamente del divisor obtenido
+    jornada_nombre = "42 Horas (Ley 2101)" if divisor == 210 else "44 Horas"
+    
+    # Fecha de cambio para la alerta de días restantes
+    fecha_cambio = date(2026, 7, 15)
+    es_post_cambio = fecha_hoy >= fecha_cambio
 
     # --- ESTILOS RESPONSIVOS (CSS) ---
     st.markdown("""
@@ -38,14 +46,15 @@ def main():
         # Navegación moderna tipo menú desplegable
         opcion = st.segmented_control(
             "📍 Seleccione un Módulo:",
-            options= ["🏠 INICIO / DASHBOARD", 
-            "🧮 CALCULADORA INDIVIDUAL", 
-            "📊 PROCESAMIENTO MASIVO", 
-            "🔍 AUDITORÍA Y VALIDACIÓN", 
-            "📝 PLANEACIÓN TRIBUTARIA", 
-            "⚙️ CONFIGURACIÓN"],
+            options= ["🏠 Inicio / Dashboard", 
+            "🧮 Calcular Nómina Individual", 
+            "📊 Procesamiento Masivo", 
+            "🔍 Auditoria y Validación", 
+            "📝 Planeación Tributaria",
+            "🔍 Consulta Legal",
+            "⚙️ Configuración"],
             selection_mode="single",
-            default="🏠 INICIO / DASHBOARD"
+            default="🏠 Inicio / Dashboard"
             )
         st.markdown("---")
         st.caption("🚀 **Versión:** 1.0.5")
@@ -53,14 +62,15 @@ def main():
         st.caption("📅 **Última actualización:** 24/03/2026")
 
     # --- CONTENIDO PRINCIPAL ---
-    if "🏠 INICIO" in opcion:
+    if "🏠 Inicio / Dashboard" in opcion:
+        st.header("Bienvenido a tu agente de Nómina")
         st.title("🚀 Panel de Control")
         
         # FILA 1: MÉTRICAS (Auto-responsivas en Streamlit)
         m1, m2, m3, m4, m5= st.columns([1,1,1,1,1])
-        m1.metric("SMMLV", "$1.705.905")
-        m2.metric("Aux. Transporte", "$249.095")
-        m3.metric("UVT", "$52.374")
+        m1.metric("SMMLV", f"${parametros_actuales['smmlv']:,}")
+        m2.metric("Aux. Transporte", f"${parametros_actuales['aux_transporte']:,}")
+        m3.metric("UVT", f"${parametros_actuales['uvt']:,}")
         m4.metric("Jornada Activa", jornada_nombre)
         m5.metric("Salario Integral", "$22.176.765")
 
@@ -146,8 +156,12 @@ def main():
         with c_status:
             st.info(f"**Ubicación:** Bogotá\n**Estado:** En desarrollo")
 
-    elif "🧮 CALCULADORA" in opcion:
+    
+    elif "🧮 Calcular Nómina Individual" in opcion:
         mostrar_calculadora()
+
+    elif opcion == "🔍 Consulta Legal":
+        renderizar_modulo_legal()
 
 if __name__ == "__main__":
     main()
