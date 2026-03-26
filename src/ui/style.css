@@ -1,0 +1,53 @@
+/* Tipografía y Métricas */
+[data-testid="stMetricValue"] { font-size: 2.2rem; font-weight: 800; color: #386664; }
+[data-testid="stMetricLabel"] { font-size: 1.05rem; color: #7eb372; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* Tarjetas de Métricas con Efecto "Hover" (Flotante) */
+[data-testid="metric-container"] {
+    background-color: #ffffff;
+    border: 1px solid #dfdd82;
+    padding: 15px 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(56, 102, 100, 0.06);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+[data-testid="metric-container"]:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(56, 102, 100, 0.15);
+}
+
+/* Botones Estéticos */
+.stButton>button {
+    border-radius: 10px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: 1px solid #386664;
+}
+.stButton>button:hover {
+    transform: scale(1.03);
+}
+
+/* Popovers y controles flotantes */
+div[data-testid="stPopover"] > button {
+    border: 2px solid #386664;
+    background-color: #F4F6F1;
+    transition: all 0.3s ease;
+}
+div[data-testid="stPopover"] > button:hover {
+    background-color: #7eb372;
+    color: white;
+}
+
+/* Ajuste de tablas en la UI */
+.stTable { width: 100%; border-radius: 8px; overflow: hidden; }
+th, .stTable th, [data-testid="stTable"] th, [data-testid="stDataFrame"] th, thead th { 
+    background-color: #77A464 !important; 
+    color: white !important; 
+    font-weight: bold !important; 
+    text-align: center !important; 
+}
+
+/* Comportamiento móvil */
+@media (max-width: 640px) {
+    [data-testid="stMetricValue"] { font-size: 1.5rem; }
+}
