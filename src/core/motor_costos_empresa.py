@@ -1,9 +1,7 @@
 # --- MOTOR DE PRESTACIONES Y PARAFISCALES AVANZADO 2026 ---
 
-def calcular_auxilio_transporte(salario_base):
-    smmlv_2026 = 1705905
-    aux_trans_2026 = 249095
-    return aux_trans_2026 if salario_base <= (smmlv_2026 * 2) else 0
+def calcular_auxilio_transporte(salario_base, smmlv, aux_transporte_oficial):
+    return aux_transporte_oficial if salario_base <= (smmlv * 2) else 0
 
 def calcular_provisiones_mensuales(base_salarial, aux_trans, es_integral, dias_trabajados=30):
     """
@@ -42,55 +40,43 @@ def calcular_provisiones_mensuales(base_salarial, aux_trans, es_integral, dias_t
         "vacaciones": round(vacaciones)
     }
 
-def calcular_parafiscales_y_ss(base_salarial, es_integral, exonerado_114_1=True):
-    # El IBC para integral es el 70% del salario total
-    ibc_ss = base_salarial * 0.7 if es_integral else base_salarial
-    return {
-        "pension_patronal": ibc_ss * 0.12,
-        "arl_1": ibc_ss * 0.00522,
-        "caja_compensacion": ibc_ss * 0.04,
-        "salud_patronal": 0 if exonerado_114_1 else ibc_ss * 0.085,
-        "sena": 0 if exonerado_114_1 else ibc_ss * 0.02,
-        "icbf": 0 if exonerado_114_1 else ibc_ss * 0.03
-    }
-
 # 1. Definir la Tabla de Cotización (Decreto 1765 de 2022)
 TABLA_RIESGOS_ARL = {
-    "Clase I (0.522%)": 0.00522,
-    "Clase II (1.044%)": 0.01044,
-    "Clase III (2.436%)": 0.02436,
-    "Clase IV (4.350%)": 0.04350,
-    "Clase V (6.960%)": 0.06960
+    "Riesgo I (0.522%)": 0.00522,
+    "Riesgo II (1.044%)": 0.01044,
+    "Riesgo III (2.436%)": 0.02436,
+    "Riesgo IV (4.350%)": 0.04350,
+    "Riesgo V (6.960%)": 0.06960
 }
 
-def calcular_parafiscales_y_ss(base_salarial, es_integral, exonerado, clase_arl="Riesgo I (0.522%)"):
+def calcular_parafiscales_y_ss(base_salarial, es_integral, exonerado, porcentajes_ss, clase_arl="Riesgo I (0.522%)"):
     """
-    Cálculo de aportes patronales con nivel de riesgo variable y exoneración de impuestos.
+    Cálculo de aportes patronales con nivel de riesgo variable y exoneración de impuestos (Art. 114-1 E.T.).
+    Integra reglas unificadas eliminando instancias redundantes.
     """
-    # 1. Pension Patronal (12%)
-    pension_pat = round(base_salarial * 0.12)
+    # El IBC para integral es el 70% del salario total
+    ibc_ss = base_salarial * 0.7 if es_integral else base_salarial
     
-    # 2. Salud Patronal (8.5%) - Aplica exoneración si cumple requisitos
-    # Si es exonerado y el salario < 10 SMMLV, es 0
-    salud_pat = 0 if exonerado else round(base_salarial * 0.085)
+    # 1. Pension Patronal
+    pension_pat = round(ibc_ss * porcentajes_ss["patronal_pension"])
+    
+    # 2. Salud Patronal - Aplica exoneración si cumple requisitos
+    salud_pat = 0 if exonerado else round(ibc_ss * porcentajes_ss["patronal_salud"])
     
     # 3. ARL - Según el nivel seleccionado
     tarifa_arl = TABLA_RIESGOS_ARL.get(clase_arl, 0.00522)
-    arl_calculada = round(base_salarial * tarifa_arl)
+    arl_calculada = round(ibc_ss * tarifa_arl)
     
     # 4. Parafiscales (Caja siempre se paga, SENA e ICBF pueden ser 0 por exoneración)
-    caja = round(base_salarial * 0.04)
-    sena_val = 0 if exonerado else round(base_salarial * 0.02)
-    icbf_val = 0 if exonerado else round(base_salarial * 0.03)
+    caja = round(ibc_ss * porcentajes_ss["parafiscal_caja"])
+    sena_val = 0 if exonerado else round(ibc_ss * porcentajes_ss["parafiscal_sena"])
+    icbf_val = 0 if exonerado else round(ibc_ss * porcentajes_ss["parafiscal_icbf"])
 
-    # --- EL PASO CRUCIAL: CONSTRUIR Y RETORNAR EL DICCIONARIO ---
-    resultados = {
+    return {
         "pension_patronal": pension_pat,
         "salud_patronal": salud_pat,
         "arl_1": arl_calculada,
         "caja_compensacion": caja,
         "sena": sena_val,
         "icbf": icbf_val
-    }
-    
-    return resultados 
+    } 

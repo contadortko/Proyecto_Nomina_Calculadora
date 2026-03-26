@@ -1,7 +1,7 @@
 # src/ui/consulta_legal.py
 import streamlit as st
 from datetime import date
-from src.core.base_legal import obtener_constantes_nomina, obtener_divisor_operativo
+from src.core.parametros_dian import obtener_constantes_nomina, obtener_divisor_operativo
 
 def renderizar_modulo_legal():
     """
@@ -112,8 +112,51 @@ def renderizar_modulo_legal():
 
     
 
-        # --- BLOQUE DE ALERTAS Y NOTIFICACIONES ---
-    st.subheader("📢 Notificaciones de Gestión")
+    # --- BIBLIA LEGAL ADICIONAL (ACORDEONES 1072 y 1625) ---
+    st.markdown("---")
+    st.subheader("📖 Reglamentación Extendida (Decretos 1072 y 1625)")
+    
+    with st.expander("🧾 1. Retención en la Fuente y Deducciones (Procedimiento 1)"):
+        st.markdown("""
+        **Depuración Base Gravable (Art. 383 E.T.):**
+        * **Ingresos No Constitutivos de Renta (INCRGO):** Aportes obligatorios a Salud, Pensión y Fondo de Solidaridad.
+        * **Deducciones Permitidas:**
+          * **Dependientes Económicos:** 10% de los ingresos brutos (Máx. 32 UVT/mes).
+          * **Medicina Prepagada:** Máx. 16 UVT/mes.
+          * **Intereses de Vivienda:** Máx. 100 UVT/mes.
+        * **Rentas Exentas Automáticas:** 25% del subtotal depurado (Limitado estrictamente a 790 UVT anuales).
+        * **Límite Cedular Total:** La suma de todas las deducciones y rentas exentas no puede superar el 40% del ingreso neto (o 1340 UVT anuales).
+        """)
+
+    with st.expander("🛡️ 2. Límites UGPP y Gastos No Constitutivos de Salario"):
+        st.markdown("""
+        **La Regla del 40% (Art. 30, Ley 1393 de 2010):**
+        * Si empresa y empleado pactan auxilios (ej. Rodamiento, alimentación, bonos extralegales) por mutuo acuerdo calificados como *No Constitutivos de Salario*.
+        * **Tope Máximo:** La suma de todos estos pagos no salariales **nunca podrá exceder el 40% del total de la remuneración mensual**.
+        * Si excede este límite, el porcentaje sobrante hace base inmediata para liquidar Seguridad Social, Parafiscales y Riesgos.
+        * **Viáticos:** Solo los viáticos permanentes de manutención y alojamiento constituyen salario (excluyen transporte/gastos de representación).
+        """)
+
+    with st.expander("⚖️ 3. Indemnizaciones y Reglas de Contratistas (Laboral/Civil)"):
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown("""
+            **Indemnizaciones (Despido Injusto):**
+            * **Término Fijo / Obra Labor:** Se paga el 100% de los salarios correspondientes al tiempo o labor que faltaba por cumplir (Mínimo 15 días).
+            * **Término Indefinido (Sueldo < 10 SMMLV):** 30 días de salario por el primer año + 20 días por cada año adicional.
+            * **Término Indefinido (Sueldo > 10 SMMLV):** 20 días por el primer año + 15 días por cada año adicional.
+            """)
+        with c2:
+            st.markdown("""
+            **Contratistas (Independientes por Honorarios):**
+            * El Ingreso Base de Cotización (IBC) está fijado sobre el **40% del valor mensualizado del contrato**.
+            * Deben pagar 16% Pensión y 12.5% Salud (a su cargo 100%).
+            * Las empresas contratantes están obligadas a retener el 10% u 11% (ReteFuente) sobre el valor bruto del pago, según sus responsabilidades tributarias.
+            """)
+            
+    # --- BLOQUE DE ALERTAS Y NOTIFICACIONES ---
+    st.markdown("---")
+    st.subheader("📢 Notificaciones de Gestión Operativa")
     # Mostramos las alertas que vienen de base_legal.py (Ley 2466, Ley 2101, etc.)
     for aviso in parametros.get("alertas", []):
         if "⚠️" in aviso:

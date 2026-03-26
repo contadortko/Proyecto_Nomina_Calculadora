@@ -35,3 +35,4 @@ Thumbs.db
 # --- CONFIGURACIÓN DE STREAMLIT ---
 # Ignoramos la carpeta de configuración local (puede contener secretos)
 .streamlit/
+.env
