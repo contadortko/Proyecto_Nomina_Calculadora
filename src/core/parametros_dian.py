@@ -355,7 +355,9 @@ def obtener_constantes_nomina(fecha_pago: Optional[date] = None) -> Dict[str, An
         "tope_25_smmlv": datos["smmlv"] * 25,
         "año_ejecucion": año,
         "recargos": obtener_tabla_recargos(fecha_pago),  
-        "alertas": obtener_alertas_legales(fecha_pago)   
+        "alertas": obtener_alertas_legales(fecha_pago),
+        "porcentajes_ss": PORCENTAJES_SEGURIDAD_SOCIAL,
+        "topes_dian_uvt": TOPES_TRIBUTARIOS_UVT
     }
 
 def obtener_divisor_operativo(fecha_pago: date) -> int:
@@ -370,3 +372,27 @@ def obtener_divisor_operativo(fecha_pago: date) -> int:
         return 210  # Base 42h
     
     return 220      # Base 44h
+
+# --- PORCENTAJES UNIVERSALES DE SEGURIDAD SOCIAL ---
+# Usados en formulas_nomina y formulas_prestaciones
+PORCENTAJES_SEGURIDAD_SOCIAL: Dict[str, float] = {
+    "empleado_salud": 0.04,
+    "empleado_pension": 0.04,
+    "patronal_salud": 0.085,
+    "patronal_pension": 0.12,
+    "parafiscal_sena": 0.02,
+    "parafiscal_icbf": 0.03,
+    "parafiscal_caja": 0.04,
+}
+
+# --- TOPES TRIBUTARIOS MAXIMOS (DIAN) EN UVT ---
+# Usados en formulas_retencion
+TOPES_TRIBUTARIOS_UVT: Dict[str, float] = {
+    "vivienda_mensual": 100.0,
+    "medicina_prepagada_mensual": 16.0,
+    "dependientes_mensual": 32.0,                  
+    "renta_exenta_laboral_mensual": 65.8,         
+    "afc_fvp_mensual": 316.66,                     
+    "limite_cedular_40_mensual": 111.67,           
+    "exoneracion_aportes_patronales_smmlv": 10.0   
+}

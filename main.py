@@ -1,8 +1,9 @@
 import streamlit as st
 from datetime import date
-from src.ui.calculadora import mostrar_calculadora
-from src.ui.consulta_legal import renderizar_modulo_legal 
-from src.core.base_legal import obtener_constantes_nomina, obtener_divisor_operativo
+from src.ui.calculadora_individual import mostrar_calculadora
+from src.ui.agente_juridico import renderizar_modulo_legal 
+from src.core.parametros_dian import obtener_constantes_nomina, obtener_divisor_operativo
+from src.ui.agente_groq import renderizar_agente_groq
 
 # 1. CONFIGURACIÓN RESPONSIVA
 st.set_page_config(
@@ -12,6 +13,12 @@ st.set_page_config(
 )
 
 def main():
+    # --- CABECERA FLOTANTE (IA SIEMPRE VISIBLE) ---
+    c_espacio, c_ia = st.columns([8, 2])
+    with c_ia:
+        with st.popover("🤖 Agente IA", use_container_width=True):
+            renderizar_agente_groq()
+
     # --- LÓGICA DE AUTOMATIZACIÓN POR FECHA (LEY 2101) ---
     fecha_hoy = date.today()
     parametros_actuales = obtener_constantes_nomina(fecha_hoy)
@@ -26,16 +33,12 @@ def main():
     fecha_cambio = date(2026, 7, 15)
     es_post_cambio = fecha_hoy >= fecha_cambio
 
-    # --- ESTILOS RESPONSIVOS (CSS) ---
-    st.markdown("""
-        <style>
-        [data-testid="stMetricValue"] { font-size: 1.8rem; }
-        .stTable { width: 100%; }
-        @media (max-width: 640px) {
-            [data-testid="stMetricValue"] { font-size: 1.2rem; }
-        }
-        </style>
-    """, unsafe_allow_html=True)
+    # --- ESTILOS EXTERNOS (CSS) ---
+    try:
+        with open("src/ui/style.css") as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    except FileNotFoundError:
+        pass
 
     # --- BARRA LATERAL ---
     with st.sidebar:
@@ -76,80 +79,35 @@ def main():
 
         st.markdown("---")
 
-        # FILA 2: TABLAS (Uso de columnas que se apilan en móviles)
-        col1, col2 = st.columns([1, 1])
-
-        with col1:
-            st.subheader("📋 Recargos y Horas Extras")
-            # Tabla completa y dinámica
-            st.markdown(f"""
-            | Concepto | % | Factor |
-            | :--- | :---: | :---: |
-            | H. Extra Diurna | 25% | 1.25 |
-            | H. Nocturna | 35% | 0.35 |
-            | H. Extra Nocturna | 75% | 1.75 |
-            | Recargo Dom/Fest | 75% | 1.75 |
-            | Extra Diurna D/F | 100% | 2.00 |
-            | Extra Nocturna D/F| 150% | 2.50 |
-            | Recargo Noct. D/F | 110% | 2.10 |
-            """)
-            st.info(f"Divisor actual para cálculos: **{divisor}** (Basado en fecha)")
-
-        with col2:
-            st.subheader("🏦 Estructura de Costos y Aportes")
-            # Segmentación solicitada en pestañas responsivas
-            tab1, tab2, tab3, tab4 = st.tabs(["Prestaciones", "Seg. Social", "Rangos FSP", "Niveles ARL"])
+        # NUEVO DISEÑO INICIO (STATELESS)
+        st.subheader("💡 Flujo de Trabajo y Privacidad")
+        st.info("🔒 **Cero Persistencia (Stateless):** Nomina Intelligence Hub no almacena historial ni datos de empleados en la nube. Los cálculos se procesan mediante LPU en milisegundos y son destruidos de la memoria. Sube tus casos de forma confidencial.")
+        
+        col_c, col_d, col_e = st.columns(3)
+        with col_c:
+            st.success("1️⃣ Ingresa tu consulta arriba en la IA.")
+        with col_d:
+            st.warning("⚡ Inferencia Legal Inmediata (Groq LPU).")
+        with col_e:
+            st.error("📥 Ejecución y borrado de huella digital.")
             
-            with tab1:
-                st.write("""
-                - **Cesantías:** 8.33%
-                - **Int. Cesantías:** 1.00%
-                - **Prima:** 8.33%
-                - **Vacaciones:** 4.17%
-                """)
-            
-            with tab2:
-                st.write("""
-                - **Salud:** 4% (Empleado) / 8.5% (Patrón*)
-                - **Pensión:** 4% (Empleado) / 12% (Patrón)
-                - **Caja Compensación:** 4% (Patrón)
-                - **Sena/ICBF:** 2% / 3% (Patrón*)
-                - **Exoneración:** Ley 1607 si < 10 SMMLV.
-                """)
-
-                # --- MENSAJE DE ACLARACIÓN TÉCNICA ---
-                st.info("""
-                **(*) Nota de Exoneración (Art. 114-1 E.T.):** Las sociedades están exoneradas del pago de aportes a **SENA, ICBF y Salud** por los empleados que devenguen, individualmente considerados, menos de **10 SMMLV** ($17.059.050).
-                """)
-            
-            with tab3:
-                st.markdown("""
-                | IBC (en SMMLV) | Tarifa FSP |
-                | :--- | :---: |
-                | 4 a < 16 | 1.0% |
-                | 16 a 17 | 1.2% |
-                | 17 a 18 | 1.4% |
-                | 18 a 19 | 1.6% |
-                | 19 a 20 | 1.8% |
-                | > 20 | 2.0% |
-                """)
-
-            with tab4:
-                st.markdown("""
-                | Clase | Riesgo | Tarifa |
-                | :--- | :--- | :---: |
-                | I | Mínimo | 0.522% |
-                | II | Bajo | 1.044% |
-                | III | Medio | 2.436% |
-                | IV | Alto | 4.350% |
-                | V | Máximo | 6.700% |
-                """)
+        st.markdown("---")
+        st.subheader("🚀 Pídele esto al Agente...")
+        st.markdown("Copia y usa estas plantillas en el chat de arriba a la derecha para desafiar al Hub:")
+        
+        t1, t2 = st.columns(2)
+        with t1:
+            st.code('Audita la liquidación de un trabajador que laboró 15 horas extras nocturnas ganando $3.000.000 en enero.', language='markdown')
+            st.code('Soy contratista civil, y cobro honorarios por $6.000.000. ¿Cuál es mi retención y seguridad social?', language='markdown')
+        with t2:
+            st.code('Trabajador a 1 SMMLV que se enferma por 10 días. ¿Cómo se ve su desprendible real?', language='markdown')
+            st.code('Soy un Magistrado que ganaba $15 Millones. Explícame mis exenciones y calcula mi renta líquida.', language='markdown')
 
         # FILA 3: ALERTAS LEGALES
         st.markdown("---")
         c_alert, c_status = st.columns([2, 1])
         with c_alert:
-            if not es_post_julio:
+            if not es_post_cambio:
                 st.warning(f"⚠️ **Alerta Legal:** Faltan {(date(2026, 7, 1) - fecha_hoy).days} días para el cambio a 42h.")
             else:
                 st.success("✅ **Ley 2101 activa:** Jornada reducida aplicada con éxito.")
@@ -162,6 +120,12 @@ def main():
 
     elif opcion == "🔍 Consulta Legal":
         renderizar_modulo_legal()
+
+    elif "⚙️ Configuración" in opcion:
+        st.title("⚙️ Configuración y Referencia Legal")
+        st.markdown("Aquí se guardan centralizadas todas las tablas brutas, matrices y porcentajes puros que usa el agente matemáticamente.")
+        from src.ui.indicadores_macro import renderizar_tablas_informativas
+        renderizar_tablas_informativas(divisor)
 
 if __name__ == "__main__":
     main()
